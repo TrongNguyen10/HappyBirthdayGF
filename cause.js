@@ -1,4 +1,3 @@
-// Reasons database
 const reasons = [
     {
         text: "Xem lại những hình ảnh cũ của em, anh cảm nhận em là 1 cô gái tích cực, hay cười và lạc quan. Nhưng có lẽ áp lực cuộc sống và trải qua những thăng trầm khiến em dần mất đi điều đó. 💖",
@@ -22,14 +21,10 @@ const reasons = [
     }
 ];
 
-// State management
 let currentReasonIndex = 0;
-const reasonsContainer = document.getElementById('reasons-container');
-const shuffleButton = document.querySelector('.shuffle-button');
-const reasonCounter = document.querySelector('.reason-counter');
 let isTransitioning = false;
+let floatingInterval = null;
 
-// Create reason card with gif
 function createReasonCard(reason) {
     const card = document.createElement('div');
     card.className = 'reason-card';
@@ -55,68 +50,6 @@ function createReasonCard(reason) {
     return card;
 }
 
-// Display new reason
-function displayNewReason() {
-    if (isTransitioning) return;
-    isTransitioning = true;
-
-    if (currentReasonIndex < reasons.length) {
-        const card = createReasonCard(reasons[currentReasonIndex]);
-        reasonsContainer.appendChild(card);
-
-        // Update counter
-        reasonCounter.textContent = `Reason ${currentReasonIndex + 1} of ${reasons.length}`;
-
-        currentReasonIndex++;
-
-        // Check if we should transform the button
-        if (currentReasonIndex === reasons.length) {
-            gsap.to(shuffleButton, {
-                scale: 1.1,
-                duration: 0.5,
-                ease: "elastic.out",
-                onComplete: () => {
-                    shuffleButton.textContent = "Tiếp thôi nào 💫";
-                    shuffleButton.classList.add('story-mode');
-                    shuffleButton.addEventListener('click', () => {
-                        gsap.to('body', {
-                            opacity: 0,
-                            duration: 1,
-                            onComplete: () => {
-                                saveMusicState();
-                                window.location.href = 'last.html';
-                            }
-                        });
-                    });
-                }
-            });
-        }
-
-        // Create floating elements
-        createFloatingElement();
-
-        setTimeout(() => {
-            isTransitioning = false;
-        }, 500);
-    } else {
-        // Handle navigation to new page or section
-        window.location.href = "#storylane";
-        // Or trigger your next page functionality
-    }
-}
-
-// Initialize button click
-shuffleButton.addEventListener('click', () => {
-    gsap.to(shuffleButton, {
-        scale: 0.9,
-        duration: 0.1,
-        yoyo: true,
-        repeat: 1
-    });
-    displayNewReason();
-});
-
-// Floating elements function (same as before)
 function createFloatingElement() {
     const elements = ['🌸', '✨', '💖', '🦋', '⭐'];
     const element = document.createElement('div');
@@ -135,15 +68,98 @@ function createFloatingElement() {
     });
 }
 
-// Custom cursor (same as before)
-const cursor = document.querySelector('.custom-cursor');
-document.addEventListener('mousemove', (e) => {
-    gsap.to(cursor, {
-        x: e.clientX - 15,
-        y: e.clientY - 15,
-        duration: 0.2
-    });
-});
+function displayNewReason(reasonsContainer, shuffleButton, reasonCounter) {
+    if (isTransitioning) return;
+    isTransitioning = true;
 
-// Create initial floating elements
-setInterval(createFloatingElement, 2000);
+    if (currentReasonIndex < reasons.length) {
+        const card = createReasonCard(reasons[currentReasonIndex]);
+        reasonsContainer.appendChild(card);
+        reasonCounter.textContent = `Reason ${currentReasonIndex + 1} of ${reasons.length}`;
+        currentReasonIndex++;
+
+        if (currentReasonIndex === reasons.length) {
+            gsap.to(shuffleButton, {
+                scale: 1.1,
+                duration: 0.5,
+                ease: "elastic.out",
+                onComplete: () => {
+                    shuffleButton.textContent = "Tiếp thôi nào 💫";
+                    shuffleButton.classList.add('story-mode');
+                    shuffleButton.addEventListener('click', () => {
+                        saveMusicState();
+                        gsap.to('body', {
+                            opacity: 0,
+                            duration: 1,
+                            onComplete: async () => {
+                                try {
+                                    await navigateTo('last.html');
+                                    gsap.set('body', { opacity: 0 });
+                                    gsap.to('body', { opacity: 1, duration: 0.6 });
+                                } catch {
+                                    window.location.href = 'last.html';
+                                }
+                            }
+                        });
+                    }, { once: true });
+                }
+            });
+        }
+
+        createFloatingElement();
+        setTimeout(() => { isTransitioning = false; }, 500);
+    } else {
+        isTransitioning = false;
+    }
+}
+
+function initCausePage() {
+    if (floatingInterval) clearInterval(floatingInterval);
+
+    currentReasonIndex = 0;
+    isTransitioning = false;
+
+    const reasonsContainer = document.getElementById('reasons-container');
+    const shuffleButton = document.querySelector('.shuffle-button');
+    const reasonCounter = document.querySelector('.reason-counter');
+    const cursor = document.querySelector('.custom-cursor');
+
+    if (!reasonsContainer || !shuffleButton || !reasonCounter) return;
+
+    reasonsContainer.innerHTML = '';
+    reasonCounter.textContent = '';
+    shuffleButton.textContent = 'Bấm zô... 💕';
+    shuffleButton.classList.remove('story-mode');
+
+    if (cursor) {
+        if (window.__causeMouseMove) {
+            document.removeEventListener('mousemove', window.__causeMouseMove);
+        }
+        window.__causeMouseMove = (e) => {
+            gsap.to(cursor, {
+                x: e.clientX - 15,
+                y: e.clientY - 15,
+                duration: 0.2
+            });
+        };
+        document.addEventListener('mousemove', window.__causeMouseMove);
+    }
+
+    const freshButton = shuffleButton.cloneNode(true);
+    shuffleButton.parentNode.replaceChild(freshButton, shuffleButton);
+
+    freshButton.addEventListener('click', () => {
+        gsap.to(freshButton, {
+            scale: 0.9,
+            duration: 0.1,
+            yoyo: true,
+            repeat: 1
+        });
+        displayNewReason(reasonsContainer, freshButton, reasonCounter);
+    });
+
+    floatingInterval = setInterval(createFloatingElement, 2000);
+}
+
+window.initCausePage = initCausePage;
+initCausePage();

@@ -2,7 +2,7 @@ const MUSIC_KEY = 'birthdayMusicPlaying';
 const TIME_KEY = 'birthdayMusicTime';
 
 let toggleBtn = null;
-let timeRestored = false;
+let musicInitialized = false;
 
 function shouldPlay() {
     return sessionStorage.getItem(MUSIC_KEY) !== 'false';
@@ -16,6 +16,8 @@ function getBgMusic() {
         audio.src = 'music2.mp3';
         audio.loop = true;
         audio.preload = 'auto';
+        audio.setAttribute('playsinline', '');
+        audio.setAttribute('webkit-playsinline', '');
         document.body.appendChild(audio);
     }
     return audio;
@@ -26,19 +28,17 @@ function getSavedTime() {
     return Number.isFinite(time) && time > 0 ? time : 0;
 }
 
-function applySavedTime(audio) {
-    if (timeRestored) return;
+function seekToSavedTime(audio) {
     const savedTime = getSavedTime();
-    if (!savedTime) {
-        timeRestored = true;
-        return;
-    }
-    if (audio.duration && Number.isFinite(audio.duration)) {
-        audio.currentTime = savedTime % audio.duration;
-    } else {
-        audio.currentTime = savedTime;
-    }
-    timeRestored = true;
+    if (!savedTime) return;
+
+    try {
+        if (audio.duration && Number.isFinite(audio.duration)) {
+            audio.currentTime = savedTime % audio.duration;
+        } else {
+            audio.currentTime = savedTime;
+        }
+    } catch (e) {}
 }
 
 function saveMusicState() {
@@ -58,14 +58,20 @@ function updateToggleIcon() {
     toggleBtn.textContent = isPlaying() ? '🔊' : '🔇';
 }
 
-function startMusic() {
+function playFromSavedPosition() {
     const audio = getBgMusic();
+    seekToSavedTime(audio);
     sessionStorage.setItem(MUSIC_KEY, 'true');
-    return audio.play().then(() => {
+    const playAttempt = audio.play();
+    if (playAttempt && typeof playAttempt.then === 'function') {
+        playAttempt.then(updateToggleIcon).catch(updateToggleIcon);
+    } else {
         updateToggleIcon();
-    }).catch(() => {
-        updateToggleIcon();
-    });
+    }
+}
+
+function startMusic() {
+    return playFromSavedPosition();
 }
 
 function pauseMusic() {
@@ -79,20 +85,24 @@ function toggleMusic() {
     if (isPlaying()) {
         pauseMusic();
     } else {
-        startMusic();
+        playFromSavedPosition();
     }
 }
 
 function restoreAndPlay() {
+    if (isPlaying()) {
+        updateToggleIcon();
+        return;
+    }
+
     const audio = getBgMusic();
 
     const resume = () => {
-        applySavedTime(audio);
-        if (shouldPlay()) {
-            startMusic();
-        } else {
+        if (!shouldPlay()) {
             updateToggleIcon();
+            return;
         }
+        playFromSavedPosition();
     };
 
     if (audio.readyState >= 1) {
@@ -113,12 +123,18 @@ function setupMusicPersistence() {
         sessionStorage.setItem(TIME_KEY, String(audio.currentTime));
     });
 
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') saveMusicState();
+    });
+
     window.addEventListener('pagehide', saveMusicState);
-    window.addEventListener('beforeunload', saveMusicState);
 }
 
 function createToggleButton() {
-    if (document.getElementById('musicToggle')) return;
+    if (document.getElementById('musicToggle')) {
+        toggleBtn = document.getElementById('musicToggle');
+        return;
+    }
 
     const style = document.createElement('style');
     style.textContent = `
@@ -140,6 +156,7 @@ function createToggleButton() {
             align-items: center;
             justify-content: center;
             transition: transform 0.2s, background 0.2s;
+            -webkit-tap-highlight-color: transparent;
         }
         #musicToggle:hover {
             transform: scale(1.1);
@@ -163,21 +180,27 @@ function createToggleButton() {
 function setupFirstInteractionFallback() {
     const unlock = () => {
         if (shouldPlay() && !isPlaying()) {
-            restoreAndPlay();
+            playFromSavedPosition();
         }
-        document.removeEventListener('click', unlock);
-        document.removeEventListener('touchstart', unlock);
-        document.removeEventListener('keydown', unlock);
+        document.removeEventListener('touchend', unlock, true);
+        document.removeEventListener('click', unlock, true);
     };
-    document.addEventListener('click', unlock);
-    document.addEventListener('touchstart', unlock);
-    document.addEventListener('keydown', unlock);
+    document.addEventListener('touchend', unlock, true);
+    document.addEventListener('click', unlock, true);
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+function initMusic() {
+    if (musicInitialized) {
+        updateToggleIcon();
+        return;
+    }
+    musicInitialized = true;
+
     createToggleButton();
     setupMusicPersistence();
     restoreAndPlay();
     setupFirstInteractionFallback();
     updateToggleIcon();
-});
+}
+
+document.addEventListener('DOMContentLoaded', initMusic);

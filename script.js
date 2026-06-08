@@ -1,48 +1,58 @@
-// Cursor following effect
-const cursor = document.querySelector('.cursor');
-document.addEventListener('mousemove', (e) => {
-    cursor.style.left = e.clientX + 'px';
-    cursor.style.top = e.clientY + 'px';
-});
-
-// Typing effect for greeting
-const greetingText = "Chúc em không chỉ sinh nhật, mà suốt cuộc đời luôn vui vẻ và hạnh phúc 💖";
-const greetingElement = document.querySelector('.greeting');
-let charIndex = 0;
-
-function typeGreeting() {
-    if (charIndex < greetingText.length) {
-        greetingElement.textContent += greetingText.charAt(charIndex);
-        charIndex++;
-        setTimeout(typeGreeting, 100);
+function initIndexPage() {
+    const cursor = document.querySelector('.cursor');
+    if (cursor) {
+        if (window.__indexMouseMove) {
+            document.removeEventListener('mousemove', window.__indexMouseMove);
+        }
+        window.__indexMouseMove = (e) => {
+            cursor.style.left = e.clientX + 'px';
+            cursor.style.top = e.clientY + 'px';
+        };
+        document.addEventListener('mousemove', window.__indexMouseMove);
     }
-}
 
-// Create floating elements
-const floatingElements = ['💖', '✨', '🌸', '💫', '💕'];
-function createFloating() {
-    const element = document.createElement('div');
-    element.className = 'floating';
-    element.textContent = floatingElements[Math.floor(Math.random() * floatingElements.length)];
-    element.style.left = Math.random() * 100 + 'vw';
-    element.style.top = Math.random() * 100 + 'vh';
-    element.style.fontSize = (Math.random() * 20 + 20) + 'px';
-    document.body.appendChild(element);
+    const greetingText = "Chúc em không chỉ sinh nhật, mà suốt cuộc đời luôn vui vẻ và hạnh phúc 💖";
+    const greetingElement = document.querySelector('.greeting');
+    if (!greetingElement) return;
 
-    gsap.to(element, {
-        y: -500,
-        x: Math.random() * 100 - 50,
-        rotation: Math.random() * 360,
-        duration: Math.random() * 5 + 5,
-        opacity: 1,
-        ease: "none",
-        onComplete: () => element.remove()
-    });
-}
+    let charIndex = 0;
+    greetingElement.textContent = '';
 
-// Initialize animations
-window.addEventListener('load', () => {
-    // Title animation
+    function typeGreeting() {
+        if (charIndex < greetingText.length) {
+            greetingElement.textContent += greetingText.charAt(charIndex);
+            charIndex++;
+            setTimeout(typeGreeting, 100);
+        }
+    }
+
+    const floatingElements = ['💖', '✨', '🌸', '💫', '💕'];
+    function createFloating() {
+        const element = document.createElement('div');
+        element.className = 'floating';
+        element.textContent = floatingElements[Math.floor(Math.random() * floatingElements.length)];
+        element.style.left = Math.random() * 100 + 'vw';
+        element.style.top = Math.random() * 100 + 'vh';
+        element.style.fontSize = (Math.random() * 20 + 20) + 'px';
+        document.body.appendChild(element);
+
+        gsap.to(element, {
+            y: -500,
+            x: Math.random() * 100 - 50,
+            rotation: Math.random() * 360,
+            duration: Math.random() * 5 + 5,
+            opacity: 1,
+            ease: "none",
+            onComplete: () => element.remove()
+        });
+    }
+
+    const ctaButton = document.querySelector('.cta-button');
+    const freshButton = ctaButton ? ctaButton.cloneNode(true) : null;
+    if (ctaButton && freshButton) {
+        ctaButton.parentNode.replaceChild(freshButton, ctaButton);
+    }
+
     gsap.to('h1', {
         opacity: 1,
         duration: 1,
@@ -50,47 +60,46 @@ window.addEventListener('load', () => {
         ease: "bounce.out"
     });
 
-    // Button animation
-    gsap.to('.cta-button', {
-        opacity: 1,
-        duration: 1,
-        y: -20,
-        ease: "back.out"
-    });
+    if (freshButton) {
+        gsap.to(freshButton, {
+            opacity: 1,
+            duration: 1,
+            y: -20,
+            ease: "back.out"
+        });
+    }
 
-    // Start typing effect
     typeGreeting();
+    if (window.__indexFloatingInterval) clearInterval(window.__indexFloatingInterval);
+    window.__indexFloatingInterval = setInterval(createFloating, 1000);
 
-    // Create floating elements periodically
-    setInterval(createFloating, 1000);
-});
-
-// Hover effects
-       // Hover effects
-       document.querySelectorAll('.cta-button').forEach(button => {
-        button.addEventListener('mouseenter', () => {
-            gsap.to(button, {
-                scale: 1.1,
-                duration: 0.3
-            });
+    if (freshButton) {
+        freshButton.addEventListener('mouseenter', () => {
+            gsap.to(freshButton, { scale: 1.1, duration: 0.3 });
         });
 
-        button.addEventListener('mouseleave', () => {
-            gsap.to(button, {
-                scale: 1,
-                duration: 0.3
-            });
+        freshButton.addEventListener('mouseleave', () => {
+            gsap.to(freshButton, { scale: 1, duration: 0.3 });
         });
 
-        // Smooth page transition on click
-        button.addEventListener('click', () => {
+        freshButton.addEventListener('click', () => {
+            saveMusicState();
             gsap.to('body', {
                 opacity: 0,
                 duration: 1,
-                onComplete: () => {
-                    saveMusicState();
-                    window.location.href = 'cause.html';
+                onComplete: async () => {
+                    try {
+                        await navigateTo('cause.html');
+                        gsap.set('body', { opacity: 0 });
+                        gsap.to('body', { opacity: 1, duration: 0.6 });
+                    } catch {
+                        window.location.href = 'cause.html';
+                    }
                 }
             });
         });
-    });
+    }
+}
+
+window.initIndexPage = initIndexPage;
+initIndexPage();
