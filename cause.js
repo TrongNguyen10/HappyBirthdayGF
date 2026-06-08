@@ -1,22 +1,22 @@
- // Reasons database
- const reasons = [
-    { 
-        text: "You’re such a kind and wonderful person, and I feel lucky to share such a good bond with you. 💖", 
+// Reasons database
+const reasons = [
+    {
+        text: "Xem lại những hình ảnh cũ của em, anh cảm nhận em là 1 cô gái tích cực, hay cười và lạc quan. Nhưng có lẽ áp lực cuộc sống và trải qua những thăng trầm khiến em dần mất đi điều đó. 💖",
         emoji: "🌟",
         gif: "gif1.gif"
     },
-    { 
-        text: "May your day be filled with love, laughter, and endless joy. 🌸 ", 
+    {
+        text: "Quá khứ của em không có anh, anh không biết em đã trải qua những gì, những ai đã khiến em khó mở lòng và hoài nghi nhiều thứ. 🌸 ",
         emoji: "💗",
         gif: "gif2.gif"
     },
-    { 
-        text: "Wishing you success, happiness, and everything your heart desires. ✨ ", 
+    {
+        text: "Nhưng anh thì khác, anh mong muốn bù đắp phần nào những thiếu thốn trước đây của em và cố gắng đưa em trở về là Thu Nhi hay cười của ngày xưa. ✨ ",
         emoji: "💕",
         gif: "gif1.gif"
     },
-    { 
-        text: "Stay the amazing girl you are—always spreading positivity around. Have the happiest year ahead! 🥳 ", 
+    {
+        text: "Anh mong muốn mỗi khi em cảm thấy cô đơn, thì vẫn nhớ ngoài gia đình, bạn bè, chị em đồng nghiệp ra, vẫn còn anh ở đây với em 😙 ( đừng đăng story suy tư bùn bùn nữa ).",
         emoji: "🌟",
         gif: "gif2.gif"
     }
@@ -33,18 +33,18 @@ let isTransitioning = false;
 function createReasonCard(reason) {
     const card = document.createElement('div');
     card.className = 'reason-card';
-    
+
     const text = document.createElement('div');
     text.className = 'reason-text';
     text.innerHTML = `${reason.emoji} ${reason.text}`;
-    
+
     const gifOverlay = document.createElement('div');
     gifOverlay.className = 'gif-overlay';
     gifOverlay.innerHTML = `<img src="${reason.gif}" alt="Friendship Memory">`;
-    
+
     card.appendChild(text);
     card.appendChild(gifOverlay);
-    
+
     gsap.from(card, {
         opacity: 0,
         y: 50,
@@ -63,10 +63,10 @@ function displayNewReason() {
     if (currentReasonIndex < reasons.length) {
         const card = createReasonCard(reasons[currentReasonIndex]);
         reasonsContainer.appendChild(card);
-        
+
         // Update counter
         reasonCounter.textContent = `Reason ${currentReasonIndex + 1} of ${reasons.length}`;
-        
+
         currentReasonIndex++;
 
         // Check if we should transform the button
@@ -76,14 +76,15 @@ function displayNewReason() {
                 duration: 0.5,
                 ease: "elastic.out",
                 onComplete: () => {
-                    shuffleButton.textContent = "Enter Our Storylane 💫";
+                    shuffleButton.textContent = "Tiếp thôi nào 💫";
                     shuffleButton.classList.add('story-mode');
                     shuffleButton.addEventListener('click', () => {
                         gsap.to('body', {
                             opacity: 0,
                             duration: 1,
                             onComplete: () => {
-                                window.location.href = 'last.html'; // Replace with the actual URL of the next page
+                                saveMusicState();
+                                window.location.href = 'last.html';
                             }
                         });
                     });
@@ -93,7 +94,7 @@ function displayNewReason() {
 
         // Create floating elements
         createFloatingElement();
-        
+
         setTimeout(() => {
             isTransitioning = false;
         }, 500);

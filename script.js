@@ -6,7 +6,7 @@ document.addEventListener('mousemove', (e) => {
 });
 
 // Typing effect for greeting
-const greetingText = "Hey You Know What! You're the most adorable human i ever met! 💖";
+const greetingText = "Chúc em không chỉ sinh nhật, mà suốt cuộc đời luôn vui vẻ và hạnh phúc 💖";
 const greetingElement = document.querySelector('.greeting');
 let charIndex = 0;
 
@@ -88,7 +88,8 @@ window.addEventListener('load', () => {
                 opacity: 0,
                 duration: 1,
                 onComplete: () => {
-                    window.location.href = 'cause.html'; // Replace with the actual URL of the next page
+                    saveMusicState();
+                    window.location.href = 'cause.html';
                 }
             });
         });
